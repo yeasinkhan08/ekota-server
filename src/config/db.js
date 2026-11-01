@@ -1,5 +1,6 @@
 import { MongoClient } from "mongodb";
 
+let client;
 let db;
 
 const connectDB = async () => {
@@ -10,7 +11,7 @@ const connectDB = async () => {
       throw new Error("MONGODB_URI is missing from .env");
     }
 
-    const client = new MongoClient(uri);
+    client = new MongoClient(uri);
 
     await client.connect();
 
@@ -26,5 +27,6 @@ const connectDB = async () => {
 };
 
 const getDB = () => db;
+const getMongoClient = () => client;
 
-export { connectDB, getDB };
+export { connectDB, getDB, getMongoClient };

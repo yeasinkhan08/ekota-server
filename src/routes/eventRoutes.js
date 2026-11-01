@@ -73,6 +73,32 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET - Get 6 recent upcoming events
+router.get("/recent", async (req, res) => {
+  try {
+    const db = getDB();
+    const eventsCollection = db.collection("events");
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const events = await eventsCollection
+      .find({ eventDate: { $gte: today } })
+      .sort({ eventDate: 1 })
+      .limit(6)
+      .toArray();
+
+    res.send({
+      success: true,
+      events,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Failed to fetch recent events",
+    });
+  }
+});
+
 // GET - Get single event by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -104,6 +130,68 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// DELETE - Delete an event
+router.delete("/:id", async (req, res) => {
+  try {
+    const db = getDB();
+    const eventsCollection = db.collection("events");
+
+    const { id } = req.params;
+
+    const result = await eventsCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    res.send({
+      success: true,
+      message: "Event deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Failed to delete event",
+    });
+  }
+});
+// UPDATE - Update an event
+router.patch("/:id", async (req, res) => {
+  try {
+    const db = getDB();
+    const eventsCollection = db.collection("events");
+
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    const result = await eventsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedData },
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).send({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    res.send({
+      success: true,
+      message: "Event updated successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Failed to update event",
+    });
+  }
+});
 // Test route
 router.get("/test", (req, res) => {
   const db = getDB();
