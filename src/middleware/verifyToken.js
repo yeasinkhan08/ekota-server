@@ -1,31 +1,60 @@
+import "dotenv/config";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
-const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+// Must match the baseURL configured in your Better Auth application.
+const AUTH_BASE_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+
+// Better Auth publishes its public signing keys here.
+const JWKS_URL = new URL("/api/auth/jwks", AUTH_BASE_URL);
+
+// Create the JWKS client once.
+// jose automatically caches the keys.
+const JWKS = createRemoteJWKSet(JWKS_URL);
 
 export const verifyToken = async (req, res, next) => {
   try {
+    // 1. Read the Authorization header.
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // 2. Validate Bearer token format.
+    const match = authHeader?.match(/^Bearer\s+(\S+)$/i);
+
+    if (!match) {
       return res.status(401).json({
-        message: "Unauthorized. Token is required.",
+        success: false,
+        message: "Unauthorized. A valid Bearer token is required.",
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = match[1];
 
+    // 3. Verify token signature and claims.
     const { payload } = await jwtVerify(token, JWKS, {
-      issuer: "http://localhost:3000",
-      audience: "http://localhost:3000",
+      issuer: AUTH_BASE_URL,
+      audience: AUTH_BASE_URL,
     });
 
-    req.user = payload;
+    // 4. Make sure the token contains a valid email.
+    if (typeof payload.email !== "string" || !payload.email.trim()) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token. User email is missing.",
+      });
+    }
 
-    next();
+    // 5. Attach verified user information to the request.
+    req.user = {
+      ...payload,
+      email: payload.email.trim().toLowerCase(),
+    };
+
+    // 6. Continue to the protected route.
+    return next();
   } catch (error) {
-    console.error("JWT verification failed:", error.message);
+    console.error("JWT verification failed:", error.code || error.message);
 
     return res.status(401).json({
+      success: false,
       message: "Invalid or expired token.",
     });
   }
