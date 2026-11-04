@@ -185,9 +185,7 @@ const formatEvent = (event) => {
   };
 };
 
-// --------------------------------------------------
 // POST - Create a new event (Protected)
-// --------------------------------------------------
 
 router.post("/", verifyToken, async (req, res) => {
   try {
@@ -237,9 +235,7 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Get all upcoming events (Public)
-// --------------------------------------------------
 
 router.get("/", async (req, res) => {
   try {
@@ -291,9 +287,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Get six recent upcoming events (Public)
-// --------------------------------------------------
 
 router.get("/recent", async (req, res) => {
   try {
@@ -326,9 +320,7 @@ router.get("/recent", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Test route (Public)
-// --------------------------------------------------
 
 router.get("/test", (req, res) => {
   try {
@@ -349,9 +341,7 @@ router.get("/test", (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Get events created by logged-in user (Protected)
-// --------------------------------------------------
 
 router.get("/my-events", verifyToken, async (req, res) => {
   try {
@@ -392,9 +382,7 @@ router.get("/my-events", verifyToken, async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Get events joined by logged-in user (Protected)
-// --------------------------------------------------
 
 router.get("/joined", verifyToken, async (req, res) => {
   try {
@@ -435,9 +423,7 @@ router.get("/joined", verifyToken, async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // POST - Join an event (Protected)
-// --------------------------------------------------
 
 router.post("/:id/join", verifyToken, async (req, res) => {
   try {
@@ -539,9 +525,7 @@ router.post("/:id/join", verifyToken, async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Check participation status (Protected)
-// --------------------------------------------------
 
 router.get("/:id/participation", verifyToken, async (req, res) => {
   try {
@@ -599,9 +583,7 @@ router.get("/:id/participation", verifyToken, async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // GET - Get single event by ID (Public)
-// --------------------------------------------------
 
 router.get("/:id", async (req, res) => {
   try {
@@ -642,9 +624,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // DELETE - Delete an event (Protected, owner only)
-// --------------------------------------------------
 
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
@@ -694,9 +674,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
   }
 });
 
-// --------------------------------------------------
 // PATCH - Update an event (Protected, owner only)
-// --------------------------------------------------
 
 router.patch("/:id", verifyToken, async (req, res) => {
   try {

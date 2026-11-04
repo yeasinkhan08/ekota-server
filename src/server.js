@@ -14,7 +14,7 @@ const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: ["http://localhost:3000", "https://ekota-client.vercel.app"],
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),

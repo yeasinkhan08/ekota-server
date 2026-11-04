@@ -1,22 +1,23 @@
 import "dotenv/config";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createRemoteJWKSet, jwtVerify, errors } from "jose";
 
-// Must match the baseURL configured in your Better Auth application.
-const AUTH_BASE_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+// Must exactly match the baseURL of your Better Auth app (no trailing slash).
+const AUTH_BASE_URL = (
+  process.env.BETTER_AUTH_URL || "http://localhost:3000"
+).replace(/\/+$/, "");
 
 // Better Auth publishes its public signing keys here.
 const JWKS_URL = new URL("/api/auth/jwks", AUTH_BASE_URL);
 
-// Create the JWKS client once.
-// jose automatically caches the keys.
+// Create once; jose caches the keys.
 const JWKS = createRemoteJWKSet(JWKS_URL);
+
+const isDev = process.env.NODE_ENV !== "production";
 
 export const verifyToken = async (req, res, next) => {
   try {
-    // 1. Read the Authorization header.
+    // 1. Read and validate the Authorization header.
     const authHeader = req.headers.authorization;
-
-    // 2. Validate Bearer token format.
     const match = authHeader?.match(/^Bearer\s+(\S+)$/i);
 
     if (!match) {
@@ -28,13 +29,13 @@ export const verifyToken = async (req, res, next) => {
 
     const token = match[1];
 
-    // 3. Verify token signature and claims.
+    // 2. Verify signature + claims.
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: AUTH_BASE_URL,
       audience: AUTH_BASE_URL,
     });
 
-    // 4. Make sure the token contains a valid email.
+    // 3. Make sure the token contains an email.
     if (typeof payload.email !== "string" || !payload.email.trim()) {
       return res.status(401).json({
         success: false,
@@ -42,20 +43,41 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    // 5. Attach verified user information to the request.
+    // 4. Attach verified user to the request.
     req.user = {
       ...payload,
       email: payload.email.trim().toLowerCase(),
     };
 
-    // 6. Continue to the protected route.
     return next();
   } catch (error) {
-    console.error("JWT verification failed:", error.code || error.message);
+    // Detailed server-side log so you can see the real reason.
+    console.error("JWT verification failed:", {
+      name: error.name,
+      code: error.code,
+      message: error.message,
+      claim: error.claim, // set on claim validation errors (iss, aud, exp...)
+      reason: error.reason,
+      jwksUrl: JWKS_URL.href,
+      expectedIssuer: AUTH_BASE_URL,
+    });
+
+    let message = "Invalid or expired token.";
+    if (error instanceof errors.JWTExpired) {
+      message = "Token expired.";
+    }
 
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token.",
+      message,
+      // Only exposed in development to help debugging.
+      ...(isDev && {
+        debug: {
+          code: error.code,
+          claim: error.claim,
+          detail: error.message,
+        },
+      }),
     });
   }
 };
